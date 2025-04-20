@@ -27,9 +27,10 @@ const corsMiddleware = (req, res, next) => {
   // Set CORS headers if origin is allowed
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cache-Control');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cache-Control, Accept');
     res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
   }
 
   // Handle preflight requests
@@ -48,6 +49,7 @@ const corsHeaderMiddleware = (req, res, next) => {
     'http://localhost:5173',
     'https://timespherepro.vercel.app',
     'https://focus-scheduler-pro-1.onrender.com',
+    'https://focus-scheduler-pro.vercel.app',
     process.env.FRONTEND_URL,
     process.env.CORS_ORIGIN
   ].filter(Boolean);
@@ -58,15 +60,19 @@ const corsHeaderMiddleware = (req, res, next) => {
   }
   
   if (!res.getHeader('Access-Control-Allow-Methods')) {
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   }
   
   if (!res.getHeader('Access-Control-Allow-Headers')) {
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, Accept, X-Requested-With');
   }
   
   if (!res.getHeader('Access-Control-Allow-Credentials')) {
     res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  if (!res.getHeader('Access-Control-Expose-Headers')) {
+    res.header('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
   }
   
   next();

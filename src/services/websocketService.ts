@@ -34,8 +34,19 @@ class WebSocketService {
       this.url = `${protocol}//localhost:${serverPort}`;
       console.log('WebSocket URL (development):', this.url);
     } else {
-      // In production, use the same host as the app
-      this.url = `${protocol}//${window.location.host}`;
+      // In production, use the API URL from environment but convert to WebSocket protocol
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      // Extract the host from the API URL
+      let wsHost = '';
+      try {
+        // Parse the API URL to get just the host portion
+        const apiUrlObj = new URL(apiUrl);
+        wsHost = apiUrlObj.host;
+      } catch (e) {
+        // Fallback to current host if API URL is invalid
+        wsHost = window.location.host;
+      }
+      this.url = `${protocol}//${wsHost}`;
       console.log('WebSocket URL (production):', this.url);
     }
   }

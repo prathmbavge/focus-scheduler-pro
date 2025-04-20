@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');  // Use the connection pool
 const { body, validationResult } = require('express-validator');
-const { v4: uuidv4 } = require('uuid');
+
+// Use our helper instead of directly requiring uuid
+const { uuidv4 } = require('../utils/uuid-helper');
 
 // Middleware to check if task exists
 const checkTaskExists = async (req, res, next) => {

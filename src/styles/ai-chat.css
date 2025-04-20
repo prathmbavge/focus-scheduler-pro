@@ -1,0 +1,67 @@
+.ai-chat-message {
+  --message-spacing: 1rem;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  .code-block {
+    @apply font-mono bg-zinc-100 dark:bg-zinc-800 p-3 rounded-md text-sm my-2 overflow-x-auto;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  }
+  
+  .list-item {
+    @apply flex items-start gap-2 text-zinc-700 dark:text-zinc-300;
+  }
+  
+  .bullet-point {
+    @apply ml-4 text-base leading-relaxed;
+    
+    &::before {
+      content: "•";
+      @apply mr-2 text-primary opacity-70;
+    }
+  }
+  
+  .numbered-list {
+    @apply ml-4 pl-4 text-base leading-relaxed;
+    counter-reset: item;
+    
+    li {
+      @apply relative;
+      counter-increment: item;
+      
+      &::before {
+        content: counter(item) ".";
+        @apply absolute -left-4 text-primary opacity-70;
+      }
+    }
+  }
+}
+
+.ai-chat-bubble {
+  @apply rounded-2xl px-4 py-2.5 text-base;
+  line-height: 1.5;
+  
+  &.assistant {
+    @apply bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100;
+  }
+  
+  &.user {
+    @apply bg-primary text-primary-foreground font-medium;
+  }
+}
+
+.typing-indicator {
+  @apply inline-flex items-center gap-1.5 opacity-70;
+  
+  span {
+    @apply w-1 h-1 rounded-full bg-primary/60;
+    animation: bounce 1.4s infinite ease-in-out;
+    
+    &:nth-child(1) { animation-delay: -0.32s; }
+    &:nth-child(2) { animation-delay: -0.16s; }
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}

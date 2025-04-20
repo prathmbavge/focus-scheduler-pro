@@ -1,0 +1,15 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "env": {
+    "VITE_API_URL": "https://focus-scheduler-pro-1.onrender.com/api",
+    "VITE_GEMINI_API_KEY": "AIzaSyD8kMWAGV4ebfL0OoQzusjEMJIidLX927E"
+  }
+}

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: focus-scheduler-pro
+    runtime: node
+    rootDirectory: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MYSQLHOST
+        value: metro.proxy.rlwy.net
+      - key: MYSQLPORT
+        value: 54492
+      - key: MYSQLUSER
+        value: root
+      - key: MYSQLDATABASE
+        value: railway
+      - key: MYSQLPASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        value: https://focus-scheduler-pro.vercel.app
+      - key: ACCESS_CONTROL_ALLOW_ORIGIN
+        value: https://focus-scheduler-pro.vercel.app
+    healthCheckPath: /health
+    autoDeploy: true

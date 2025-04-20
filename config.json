@@ -1,0 +1,22 @@
+{
+  "database": {
+    "host": "metro.proxy.rlwy.net",
+    "user": "root",
+    "password": "your_password_here",
+    "database": "railway",
+    "port": 54492,
+    "connectionLimit": 10
+  },
+  "server": {
+    "port": 5001,
+    "cors": {
+      "origin": "http://localhost:8080",
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "credentials": true,
+      "allowedHeaders": ["Content-Type", "Authorization"]
+    }
+  },
+  "api": {
+    "baseUrl": "http://localhost:5001/api"
+  }
+}

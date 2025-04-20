@@ -55,12 +55,5 @@ export default defineConfig({
       'axios',
       '@tanstack/react-query',
     ],
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/styles/variables.scss";`,
-      },
-    },
-  },
+  }
 });

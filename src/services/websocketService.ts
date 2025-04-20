@@ -23,8 +23,16 @@ class WebSocketService {
   private eventCallbacks: Record<string, Callback[]> = {};
   private url: string;
   private connectionDisabled = false;
+  private isWebSocketSupported: boolean;
 
   constructor() {
+    // Check if WebSocket is supported
+    this.isWebSocketSupported = typeof WebSocket !== 'undefined';
+    if (!this.isWebSocketSupported) {
+      console.warn('WebSockets are not supported in this browser');
+      return;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     
     // In development mode, get the WebSocket URL from environment or use default
@@ -36,16 +44,25 @@ class WebSocketService {
     } else {
       // In production, use the API URL from environment but convert to WebSocket protocol
       const apiUrl = import.meta.env.VITE_API_URL || '';
+      
       // Extract the host from the API URL
       let wsHost = '';
       try {
-        // Parse the API URL to get just the host portion
-        const apiUrlObj = new URL(apiUrl);
-        wsHost = apiUrlObj.host;
+        if (apiUrl) {
+          // Parse the API URL to get just the host portion
+          const apiUrlObj = new URL(apiUrl);
+          wsHost = apiUrlObj.host;
+        } else {
+          // Fallback to current host if API URL is not set
+          wsHost = window.location.host;
+        }
       } catch (e) {
+        console.warn('Error parsing API URL, falling back to current host:', e);
         // Fallback to current host if API URL is invalid
         wsHost = window.location.host;
       }
+      
+      // Create the full WebSocket URL
       this.url = `${protocol}//${wsHost}`;
       console.log('WebSocket URL (production):', this.url);
     }
@@ -55,6 +72,12 @@ class WebSocketService {
    * Initialize the WebSocket connection
    */
   public connect(): void {
+    // Skip if WebSocket is not supported
+    if (!this.isWebSocketSupported) {
+      console.warn('WebSockets are not supported, connection attempt skipped');
+      return;
+    }
+    
     // Skip connection if it's disabled
     if (this.connectionDisabled) {
       console.log('WebSocket connection is disabled');
@@ -87,7 +110,12 @@ class WebSocketService {
   public disconnect(): void {
     if (!this.socket) return;
     
-    this.socket.close();
+    try {
+      this.socket.close();
+    } catch (e) {
+      console.error('Error closing WebSocket connection:', e);
+    }
+    
     this.socket = null;
     this.isConnected = false;
     this.cancelReconnect();
@@ -101,6 +129,7 @@ class WebSocketService {
     this.connectionDisabled = true;
     this.disconnect();
     this.cancelReconnect();
+    console.log('WebSocket connections have been disabled');
   }
 
   /**
@@ -109,6 +138,7 @@ class WebSocketService {
   public enableConnection(): void {
     this.connectionDisabled = false;
     this.reconnectAttempts = 0;
+    console.log('WebSocket connections have been enabled, attempting to connect');
     this.connect();
   }
   
@@ -121,18 +151,26 @@ class WebSocketService {
 
   /**
    * Send a message to the WebSocket server
+   * Returns true if message was sent successfully, false otherwise
    */
-  public send(message: WebSocketMessage): void {
+  public send(message: WebSocketMessage): boolean {
+    if (!this.isWebSocketSupported) {
+      console.warn('WebSockets are not supported, message not sent');
+      return false;
+    }
+    
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       console.warn('Cannot send message, WebSocket is not connected');
-      return;
+      return false;
     }
 
     try {
       this.socket.send(JSON.stringify(message));
+      return true;
     } catch (error) {
       console.error('Error sending message:', error);
       this.triggerEvent('error', { error });
+      return false;
     }
   }
 
@@ -183,8 +221,10 @@ class WebSocketService {
         if (import.meta.env.DEV) {
           baseUrl = `http://localhost:${serverPort}`;
         } else {
-          baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+          baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
         }
+        
+        console.log('Sending data reset request to:', `${baseUrl}/api/data-reset`);
         
         fetch(`${baseUrl}/api/data-reset`, {
           method: 'POST',

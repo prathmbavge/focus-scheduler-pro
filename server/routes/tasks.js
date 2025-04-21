@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/database');  // Use the connection pool
+const pool = require('../config/database');  // This is already the promise pool
 const { body, validationResult } = require('express-validator');
 
 // Use our helper instead of directly requiring uuid
@@ -55,8 +55,11 @@ const broadcastTaskChange = (action, task) => {
 // Get all tasks
 router.get('/', async (req, res) => {
     try {
+        // Log the request for debugging
+        console.log('Fetching all tasks');
         const [rows] = await pool.query('SELECT * FROM tasks ORDER BY created_at DESC');
-        res.json(rows);
+        console.log(`Found ${rows?.length || 0} tasks`);
+        res.json(rows || []);
     } catch (error) {
         console.error('Error fetching tasks:', error);
         res.status(500).json({ error: 'Failed to fetch tasks' });
@@ -119,6 +122,7 @@ router.get('/statistics', async (req, res, next) => {
 // Create a new task
 router.post('/', async (req, res) => {
     try {
+        console.log('Creating new task with data:', req.body);
         const { title, description, category, priority, dueDate } = req.body;
         const id = uuidv4();
         
@@ -127,14 +131,19 @@ router.post('/', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?)
         `;
         
-        await pool.query(query, [id, title, description, category, priority, dueDate]);
+        await pool.execute(query, [id, title, description, category, priority, dueDate]);
+        console.log('Task inserted with ID:', id);
         
-        const [newTask] = await pool.query('SELECT * FROM tasks WHERE id = ?', [id]);
+        const [newTask] = await pool.execute('SELECT * FROM tasks WHERE id = ?', [id]);
         
         // Broadcast the creation via WebSocket
-        broadcastTaskChange('created', newTask[0]);
-        
-        res.status(201).json(newTask[0]);
+        if (newTask && newTask.length > 0) {
+            broadcastTaskChange('created', newTask[0]);
+            res.status(201).json(newTask[0]);
+        } else {
+            console.error('Task created but could not retrieve it');
+            res.status(201).json({ id, message: 'Task created but details not available' });
+        }
     } catch (error) {
         console.error('Error creating task:', error);
         res.status(500).json({ error: 'Failed to create task' });
@@ -164,6 +173,7 @@ router.put('/:id/status', checkTaskExists, async (req, res, next) => {
 router.put('/:id/complete', async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('Completing task with ID:', id);
         
         const query = `
             UPDATE tasks
@@ -171,11 +181,12 @@ router.put('/:id/complete', async (req, res) => {
             WHERE id = ?
         `;
         
-        await pool.query(query, [id]);
+        await pool.execute(query, [id]);
         
-        const [updatedTask] = await pool.query('SELECT * FROM tasks WHERE id = ?', [id]);
+        const [updatedTask] = await pool.execute('SELECT * FROM tasks WHERE id = ?', [id]);
         
         if (updatedTask.length === 0) {
+            console.log('Task not found for ID:', id);
             return res.status(404).json({ error: 'Task not found' });
         }
         

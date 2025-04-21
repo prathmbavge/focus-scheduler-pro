@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
     try {
         // Log the request for debugging
         console.log('Fetching all tasks');
-        const [rows] = await pool.query('SELECT * FROM tasks ORDER BY created_at DESC');
+        const [rows] = await pool.query('SELECT * FROM tasks ORDER BY createdAt DESC');
         console.log(`Found ${rows?.length || 0} tasks`);
         res.json(rows || []);
     } catch (error) {
@@ -127,8 +127,8 @@ router.post('/', async (req, res) => {
         const id = uuidv4();
         
         const query = `
-            INSERT INTO tasks (id, title, description, category, priority, due_date)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (id, title, description, category, priority, dueDate, status, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, 'todo', NOW())
         `;
         
         await pool.execute(query, [id, title, description, category, priority, dueDate]);
@@ -146,7 +146,7 @@ router.post('/', async (req, res) => {
         }
     } catch (error) {
         console.error('Error creating task:', error);
-        res.status(500).json({ error: 'Failed to create task' });
+        res.status(500).json({ error: 'Failed to create task', details: error.message });
     }
 });
 
@@ -177,7 +177,7 @@ router.put('/:id/complete', async (req, res) => {
         
         const query = `
             UPDATE tasks
-            SET status = 'completed', completed_at = CURRENT_TIMESTAMP
+            SET status = 'completed', completedAt = CURRENT_TIMESTAMP
             WHERE id = ?
         `;
         
@@ -196,7 +196,7 @@ router.put('/:id/complete', async (req, res) => {
         res.json(updatedTask[0]);
     } catch (error) {
         console.error('Error completing task:', error);
-        res.status(500).json({ error: 'Failed to complete task' });
+        res.status(500).json({ error: 'Failed to complete task', details: error.message });
     }
 });
 
@@ -205,6 +205,10 @@ router.put('/:id', checkTaskExists, validateTask, checkValidation, async (req, r
   try {
     const { title, description, category, priority, dueDate, status } = req.body;
     const taskId = req.params.id;
+    
+    console.log(`Updating task ${taskId} with data:`, req.body);
+    
+    // Convert dueDate to MySQL format if present
     const mysqlDueDate = dueDate ? new Date(dueDate).toISOString().slice(0, 19).replace('T', ' ') : null;
     
     await pool.execute(
@@ -214,11 +218,17 @@ router.put('/:id', checkTaskExists, validateTask, checkValidation, async (req, r
     
     const [updatedTask] = await pool.execute('SELECT * FROM tasks WHERE id = ?', [taskId]);
     
+    if (updatedTask.length === 0) {
+      console.log('Task not found after update for ID:', taskId);
+      return res.status(404).json({ error: 'Task not found after update' });
+    }
+    
     // Broadcast the update via WebSocket
     broadcastTaskChange('updated', updatedTask[0]);
     
     res.json(updatedTask[0]);
   } catch (err) {
+    console.error('Error updating task:', err);
     next(err);
   }
 });

@@ -118,6 +118,7 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api/data-reset', require('./routes/data-reset'));
+app.use('/api/ai', require('./routes/ai'));
 console.log('Routes loaded');
 
 // Error handling middleware
